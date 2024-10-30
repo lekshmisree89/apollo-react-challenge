@@ -4,10 +4,8 @@
 
 
 
- import {User} from '../models/index.js';
-import { signToken,AuthenticationError } from '../services/auth.js';
-
-
+import  User  from '../models/User.js';
+import { signToken, AuthenticationError } from '../services/auth.js';
 
 interface User {
     _id: string;
@@ -15,7 +13,7 @@ interface User {
     email: string;
     bookCount: number;
     savedBooks: [Book];
-    }
+}
     
     interface Book {
         bookId: string;
@@ -53,10 +51,7 @@ interface User {
         image: string;
         link: string;
     }
-    
-    interface DeleteBookArgs {
-        bookId: string;
-    }
+   
     
     export const resolvers = {
         Query: {
@@ -89,7 +84,7 @@ interface User {
         },
         addUser: async (_parent: any, args: Args) => {
             const user = await User.create(args);
-            const token = signToken(user.name, user.email, user._id);
+            const token = signToken(user.username, user.email, user._id);
             return { token, user };
         },
         saveBook: async (_parent: any, args: SaveBookArgs, context: Context) => {
@@ -106,7 +101,7 @@ interface User {
             throw new AuthenticationError('You need to be logged in!');
         },
 
-        deleteBook: async (_parent: any, { bookId }: DeleteBookArgs, context: Context) => {
+        deleteBook: async (_parent: any, { bookId }: BookArgs, context: Context) => {
             if (context.user) {
             return await User.findOneAndUpdate(
                 { _id: context.user._id },
@@ -130,19 +125,4 @@ export default resolvers;
 
 
 
-
-        login: async (_parent: any, { email, password }: Args) => {
-            const user = await User
-            .findOne({ email });
-
-            if (!user) {
-            throw new AuthenticationError('Incorrect credentials');
-            }
-
-            const correctPw = await user.isCorrectPassword(password);
-            if (!correctPw) {
-            throw new AuthenticationError('Incorrect credentials');
-            }
-            const token = signToken(user.name, user.email, user._id);
-            return { token, user };
-    
+        
