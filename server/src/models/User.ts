@@ -1,21 +1,21 @@
-import { Schema, model, type Document } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 
 // import schema from Book.js
 import bookSchema from './Book.js';
-import type { BookDocument } from './Book.js';
 
-export interface UserDocument extends Document {
+
+export interface User extends Document {
   id: string;
   username: string;
   email: string;
   password: string;
-  savedBooks: BookDocument[];
+  savedBooks: typeof bookSchema[];
   isCorrectPassword(password: string): Promise<boolean>;
   bookCount: number;
 }
 
-const userSchema = new Schema<UserDocument>(
+const userSchema = new Schema<User>(
   {
     username: {
       type: String,
@@ -44,7 +44,7 @@ const userSchema = new Schema<UserDocument>(
 );
 
 // hash user password
-userSchema.pre('save', async function (next) {
+userSchema.pre<User>('save', async function (next) {
   if (this.isNew || this.isModified('password')) {
     const saltRounds = 10;
     this.password = await bcrypt.hash(this.password, saltRounds);
@@ -63,6 +63,6 @@ userSchema.virtual('bookCount').get(function () {
   return this.savedBooks.length;
 });
 
-const User = model<UserDocument>('User', userSchema);
+const User = model<User>('User', userSchema);
 
 export default User;
