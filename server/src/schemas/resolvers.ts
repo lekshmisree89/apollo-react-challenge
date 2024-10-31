@@ -34,14 +34,14 @@ interface User {
         password: string;
     }
     
-    interface BookArgs {
-        authors: [string];
-        description: string;
-        title: string;
-        bookId: string;
-        image: string;
-        link: string;
-    }
+    // interface BookArgs {
+    //     authors: [string];
+    //     description: string;
+    //     title: string;
+    //     bookId: string;
+    //     image: string;
+    //     link: string;
+    // }
     
     interface SaveBookArgs {
         authors: [string];
@@ -101,7 +101,7 @@ interface User {
             throw new AuthenticationError('You need to be logged in!');
         },
 
-        deleteBook: async (_parent: any, { bookId }: BookArgs, context: Context) => {
+        deleteBook: async (_parent: any, { bookId }: {bookId:string}, context: Context) => {
             if (context.user) {
             return await User.findOneAndUpdate(
                 { _id: context.user._id },

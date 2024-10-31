@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect,type FormEvent } from 'react';
 import {
   Container,
   Col,
@@ -21,9 +21,18 @@ type Book = {
 };
 
 const SearchBooks = () => {
-  const [searchInput, setSearchInput] = useState('');
-  const [searchedBooks, setSearchedBooks] = useState<Book[]>([]);
-  const [saveBook ] = useMutation(SAVE_BOOK);
+  const [searchInput, setSearchInput] = useState('');//searchInput is a string
+  const [saveBook] = useMutation(SAVE_BOOK);
+  const [searchedBooks, setSearchedBooks] = useState<Book[]>([]);//searchedBooks is an array of Book objects
+
+  useEffect(() => {
+    return () => {
+      setSearchedBooks([]);
+    }
+  
+  });
+
+
 
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,7 +128,7 @@ const SearchBooks = () => {
               </Card.Body>
             </Card>
           </Col>
-        ))}
+        ))} 
       </Row>
     </Container>
   );
