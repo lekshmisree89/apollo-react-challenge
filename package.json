@@ -1,8 +1,8 @@
 {
-  "name": "tech-matchup-app",
+  "name": "apollo-graphql-react",
   "version": "1.0.0",
   "description": "",
-  "main": "server/dist/server.js",
+  "main": "index.js",
   "scripts": {
     "start": "node server/server.js",
     "start:dev": "concurrently \"cd server && npm run watch\" \"wait-on tcp:3001 && cd client && npm run dev\"",
@@ -19,13 +19,11 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "concurrently": "^8.2.2",
-    "dotenv": "^16.4.5",
-    "jsonwebtoken": "^9.0.2"
+    "concurrently": "^8.2.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.7",
+    "nodemon": "^2.0.15",
     "wait-on": "^7.2.0"
   }
 }
