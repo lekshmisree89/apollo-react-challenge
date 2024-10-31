@@ -2,29 +2,30 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import React from 'react';
-
-//import { createUser } from '../utils/API';
 import Auth from '../utils/auth';
 import { useMutation } from '@apollo/client';
 import { ADD_USER } from '../utils/mutations';
-// SignupForm.tsx: Replace the addUser() functionality imported
-//  from the API file with the ADD_USER mutation functionality.
 
 interface SignUpFormProps {
   handleModalClose: () => void;
 }
 
-
-const SignupForm: React.FC<SignUpFormProps> = () => {
+const SignupForm: React.FC<SignUpFormProps> = ({ handleModalClose }) => {
   const [formState, setFormState] = useState({
     name: '',
     email: '',
     password: '',
   });
-  const [addUser, { error }] = useMutation(ADD_USER);
+  const [addUser, { error }] = useMutation(ADD_USER, {
+    onCompleted(data) {
+      // Login the user after successfully signing up
+      Auth.login(data.addUser.token);
+      handleModalClose(); // Close the modal upon successful signup
+    },
+  });
 
-  const handleChange = (event: ChangeEvent) => {
-    const { name, value } = event.target as HTMLInputElement;
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
 
     setFormState({
       ...formState,
@@ -32,16 +33,14 @@ const SignupForm: React.FC<SignUpFormProps> = () => {
     });
   };
 
-  //submit form
+  // Submit form
   const handleFormSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     try {
-      const { data } = await addUser({
-        variables: { input:{...formState }},
+      await addUser({
+        variables: { input: { ...formState } },
       });
-
-      Auth.login(data.addUser.token);
     } catch (e) {
       console.error(e);
     }
@@ -98,13 +97,6 @@ const SignupForm: React.FC<SignUpFormProps> = () => {
       </div>
     </main>
   );
-
 };
 
 export default SignupForm;
-
-
-
-
-
-

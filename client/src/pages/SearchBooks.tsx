@@ -1,15 +1,15 @@
-import { useState, useEffect,type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import {
   Container,
   Col,
   Form,
   Button,
   Card,
-  Row
+  Row,
 } from 'react-bootstrap';
-import { searchGoogleBooks } from '../utils/API';
+import { searchGoogleBooks } from '../utils/API'; // Keep this for searching books
 import { useMutation } from '@apollo/client';
-import { SAVE_BOOK } from '../utils/mutations';
+import { SAVE_BOOK } from '../utils/mutations'; // Import the SAVE_BOOK mutation
 import Auth from '../utils/auth';
 
 type Book = {
@@ -21,36 +21,42 @@ type Book = {
 };
 
 const SearchBooks = () => {
-  const [searchInput, setSearchInput] = useState('');//searchInput is a string
-  const [saveBook] = useMutation(SAVE_BOOK);
-  const [searchedBooks, setSearchedBooks] = useState<Book[]>([]);//searchedBooks is an array of Book objects
+  const [searchInput, setSearchInput] = useState('');
+  const [searchedBooks, setSearchedBooks] = useState<Book[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Initialize the useMutation hook for the SAVE_BOOK mutation
+  const [saveBookMutation] = useMutation(SAVE_BOOK);
 
   useEffect(() => {
     return () => {
       setSearchedBooks([]);
-    }
-  
-  });
-
-
+    };
+  }, []);
 
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!searchInput) {
-      return false;
+      return;
     }
 
     try {
       const response = await searchGoogleBooks(searchInput);
 
       if (!response.ok) {
-        throw new Error('something went wrong!');
+        throw new Error('Something went wrong!');
       }
 
-      const { items } = await response.json();
+      const data = await response.json();
+      const { items } = data;
 
-      const book = items.map((book: any) => ({
+      if (!items || items.length === 0) {
+        console.log('No books found');
+        return;
+      }
+
+      const books = items.map((book: any) => ({
         bookId: book.id,
         authors: book.volumeInfo.authors || ['No author to display'],
         title: book.volumeInfo.title,
@@ -58,10 +64,12 @@ const SearchBooks = () => {
         image: book.volumeInfo.imageLinks?.thumbnail || '',
       }));
 
-      setSearchedBooks(book);
+      setSearchedBooks(books);
       setSearchInput('');
+      setErrorMessage('');
     } catch (err) {
       console.error(err);
+      setErrorMessage('Failed to fetch books. Please try again.');
     }
   };
 
@@ -73,14 +81,19 @@ const SearchBooks = () => {
     }
 
     try {
-      await saveBook({
-        variables: { input: bookToSave }
+      // Execute the SAVE_BOOK mutation
+      await saveBookMutation({
+        variables: { input: bookToSave }, // Pass the book data as input
       });
-    } catch (err) {
-      console.error(err);
-    }
 
-    setSearchedBooks(searchedBooks.filter((book) => book.bookId !== bookId));
+      console.log(`Book saved: ${bookId}`); // Log success
+
+      // Update state to remove the saved book from the search results
+      setSearchedBooks(searchedBooks.filter((book) => book.bookId !== bookId));
+    } catch (err) {
+      console.error('Error saving book:', err); // Log error
+      setErrorMessage('Failed to save book. Please try again.'); // Set error message if needed
+    }
   };
 
   return (
@@ -119,7 +132,7 @@ const SearchBooks = () => {
                 <Card.Text>{book.description}</Card.Text>
                 {Auth.loggedIn() && (
                   <Button
-                    disabled={!(book.bookId)}
+                    disabled={!book.bookId}
                     onClick={() => handleSaveBook(book.bookId)}
                   >
                     Save this Book!
@@ -128,11 +141,11 @@ const SearchBooks = () => {
               </Card.Body>
             </Card>
           </Col>
-        ))} 
+        ))}
       </Row>
+      {errorMessage && <p className="text-danger">{errorMessage}</p>} {/* Display error message */}
     </Container>
   );
+};
 
-}
- export default SearchBooks;
-    
+export default SearchBooks;
