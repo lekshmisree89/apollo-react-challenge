@@ -1,6 +1,6 @@
 
 
-const typeDefs =`
+const typeDefs = `
 type User {
     _id: ID!
     username: String!
@@ -44,7 +44,7 @@ type User {
 
 
 `;
- export default typeDefs;
+export default typeDefs;
 
 
 

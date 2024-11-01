@@ -18,16 +18,16 @@ interface Book {
     link: string;
 }
 
-interface Context {
+interface Context {// Define the context interface
     user: User;
 }
 
 interface AddUserArgs {
-    input: {
-        username: string;
-        email: string;
-        password: string;
-    };
+
+    username: string;
+    email: string;
+    password: string;
+
 }
 
 interface UserArgs {
@@ -36,17 +36,20 @@ interface UserArgs {
 }
 
 interface SaveBookArgs {
-    authors: string[];
-    description: string;
-    title: string;
-    bookId: string;
-    image: string;
-    link: string;
+    input: {
+        authors: string[];
+        description: string;
+        title: string;
+        bookId: string;
+        image: string;
+        link?: string;
+    }
 }
 
 export const resolvers = {
     Query: {
-        me: async (_parent: any, _args: any, context: Context) => {
+    
+        me: async (_parent: any, _args: unknown, context: Context) => {
             if (context.user) {
                 const userData = await User.findOne({ _id: context.user._id })
                     .select('-__v -password')
@@ -55,7 +58,7 @@ export const resolvers = {
                 return userData;
             }
             throw new AuthenticationError('Not logged in');
-        },
+        }
     },
     Mutation: {
         login: async (_parent: any, { email, password }: UserArgs) => {
@@ -70,22 +73,24 @@ export const resolvers = {
             const token = signToken(user.username, user.email, user._id);
             return { token, user };
         },
-        addUser: async (_parent: any, { input }: AddUserArgs) => {
-            const user = await User.create(input);
+        addUser: async (_parent: any, args: AddUserArgs) => {
+            const user = await User.create(args);
             const token = signToken(user.username, user.email, user._id);
             return { token, user };
         },
-        saveBook: async (_parent: any, args: SaveBookArgs, context: Context) => {
+        saveBook: async (_parent: unknown,
+            { input }: SaveBookArgs,
+            context: Context) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
-                    { _id: context.user._id },
-                    { $addToSet: { savedBooks: args } },
-                    { new: true, runValidators: true }
+                    { _id: context.user.username},
+                    { $addToSet: { savedBooks: input } },
+                    { new: true , runValidators: true}
                 );
 
                 return updatedUser;
             }
-            throw new AuthenticationError('You need to be logged in!');
+            throw new AuthenticationError('You need to be logged in!');//
         },
         deleteBook: async (_parent: any, { bookId }: { bookId: string }, context: Context) => {
             if (context.user) {

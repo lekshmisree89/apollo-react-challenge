@@ -1,82 +1,92 @@
-import { useState } from 'react';
+import React from 'react';
 import { Container, Card, Button, Row, Col } from 'react-bootstrap';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_ME } from '../utils/queries'; // Import the GET_ME query
-import { REMOVE_BOOK } from '../utils/mutations'; // Import the REMOVE_BOOK mutation
+import { GET_ME } from '../utils/queries';
+import { REMOVE_BOOK } from '../utils/mutations';
+import { removeBookId, saveBookIds } from '../utils/localStorage';
 import Auth from '../utils/auth';
-import { removeBookId } from '../utils/localStorage';
-import type { User } from '../models/User';
 
-const SavedBooks = () => {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch user data using the useQuery hook
-  const { loading, error, data } = useQuery(GET_ME);
+
+const SavedBooks: React.FC = () => {
+  // Fetch user data on component load using `useQuery`
+  const { loading, data } = useQuery(GET_ME,{
+    variables: { saveBookIds },
+
+
+  });
+
+  const userData = data?.me || {};// optional chaining syntax
+
+if (userData.savedBooks) {
+  saveBookIds(userData.savedBooks.map(({ bookId }: any) => bookId));
+}
+
+  
+  // Define the REMOVE_BOOK mutation
   const [removeBook] = useMutation(REMOVE_BOOK, {
-    onCompleted: () => {
-      // Optionally, handle any completion logic here, like removing the book from local storage
-    },
-    onError: (err) => {
-      console.error(err);
-      setErrorMessage('Failed to delete the book.');
+    update(cache, { data: { removeBook } }) {
+      // Update the cache to remove the deleted book from savedBooks
+      const existingData = cache.readQuery({ query: GET_ME }) as { me: any };
+      if (existingData) {
+        cache.writeQuery({
+          query: GET_ME,
+          data: {
+            me: {
+              ...existingData.me,
+              savedBooks: existingData.me.savedBooks.filter(
+                (book: any) => book.bookId !== removeBook.bookId
+              ),
+            },
+          },
+        });
+      }
     },
   });
 
-  // Check if data is loading
-  if (loading) {
-    return <h2>LOADING...</h2>;
-  }
 
-  // Handle errors from the query
-  if (error) {
-    console.error(error);
-    return <h2>Failed to load user data.</h2>;
-  }
 
-  const userData: User = data.me;
 
-  // Create function to handle book deletion
+
+  // Handle the deletion of a book
   const handleDeleteBook = async (bookId: string) => {
-    const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-    if (!token) {
-      return false;
+    if (!Auth.loggedIn()) {
+      return;
     }
 
     try {
       await removeBook({
-        variables: { bookId }, // Pass the bookId as a variable to the mutation
+        variables: { bookId },
       });
-      
-      // Remove book's id from localStorage upon success
+      // Remove book ID from local storage
       removeBookId(bookId);
     } catch (err) {
       console.error(err);
-      setErrorMessage('Failed to delete the book.');
     }
   };
+
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
 
   return (
     <>
       <div className='text-light bg-dark p-5'>
         <Container>
-          <h1>
-            Viewing {userData.username ? `${userData.username}'s` : ''} saved books!
-          </h1>
+          <h1>Viewing {userData.username ? `${userData.username}'s` : 'your'} saved books!</h1>
         </Container>
       </div>
       <Container>
         <h2 className='pt-5'>
-          {userData.savedBooks.length
+          {userData.savedBooks?.length
             ? `Viewing ${userData.savedBooks.length} saved ${
                 userData.savedBooks.length === 1 ? 'book' : 'books'
               }:`
             : 'You have no saved books!'}
         </h2>
-        {errorMessage && <p className='text-danger'>{errorMessage}</p>} {/* Display error message */}
         <Row>
-          {userData.savedBooks.map((book) => (
-            <Col md='4' key={book.bookId}> {/* Moved key to the Col */}
+          {userData.savedBooks?.map((book: any) => (
+            <Col md='4' key={book.bookId}>
               <Card border='dark'>
                 {book.image && (
                   <Card.Img
@@ -87,7 +97,7 @@ const SavedBooks = () => {
                 )}
                 <Card.Body>
                   <Card.Title>{book.title}</Card.Title>
-                  <p className='small'>Authors: {book.authors.join(', ')}</p> {/* Joining authors */}
+                  <p className='small'>Authors: {book.authors.join(', ')}</p>
                   <Card.Text>{book.description}</Card.Text>
                   <Button
                     className='btn-block btn-danger'

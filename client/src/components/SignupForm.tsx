@@ -12,7 +12,7 @@ interface SignUpFormProps {
 
 const SignupForm: React.FC<SignUpFormProps> = ({ handleModalClose }) => {
   const [formState, setFormState] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
   });
@@ -39,7 +39,7 @@ const SignupForm: React.FC<SignUpFormProps> = ({ handleModalClose }) => {
 
     try {
       await addUser({
-        variables: { input: { ...formState } },
+        variables:  { ...formState } ,
       });
     } catch (e) {
       console.error(e);
@@ -58,7 +58,7 @@ const SignupForm: React.FC<SignUpFormProps> = ({ handleModalClose }) => {
                 <Form.Control
                   type="text"
                   placeholder="Your name"
-                  name="name"
+                  name="username"
                   id="name"
                   onChange={handleChange}
                 />
